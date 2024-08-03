@@ -79,9 +79,12 @@ class Scanner {
 			case ">":
 				this.addToken(this.match("=") ? TT.GREATER_EQUAL : TT.GREATER);
 				break;
+
 			case "/":
 				if (this.match("/")) {
 					while (this.peek() != "\n" && !this.isAtEnd()) this.advance();
+				} else if (this.match("*")) {
+					this.multiLineComment();
 				} else {
 					this.addToken(TT.SLASH);
 				}
@@ -146,6 +149,26 @@ class Scanner {
 		if (type == null) type = TT.IDENTIFIER;
 
 		this.addToken(type);
+	}
+
+	multiLineComment() {
+		let nestingLevel = 1;
+
+		while (nestingLevel > 0 && !this.isAtEnd()) {
+			if (this.peek() == "\n") {
+				this.#line++;
+			}
+
+			if (this.#source[this.#current] === "*" && this.peekNext() === "/") {
+				nestingLevel--;
+				this.advance();
+			} else if (this.#source[this.#current] === "/" && this.peekNext() === "*") {
+				nestingLevel++;
+				this.advance();
+			}
+
+			this.advance();
+		}
 	}
 
 	match(expected) {
